@@ -1,0 +1,35 @@
+{
+  "name": "open-class-reminder",
+  "version": "1.0.0",
+  "description": "开源课堂提醒器 - 物理老师专用课表提醒应用",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "build": "echo 'Building APK via GitHub Actions...'",
+    "dev": "python -m http.server 8000"
+  },
+  "keywords": [
+    "open-source",
+    "class-reminder",
+    "schedule",
+    "reminder",
+    "physics",
+    "teacher",
+    "mobile",
+    "cordova",
+    "android"
+  ],
+  "author": "Physics Teacher Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/open-class-reminder.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/open-class-reminder/issues"
+  },
+  "homepage": "https://github.com/your-username/open-class-reminder#readme",
+  "devDependencies": {
+    "cordova": "^12.0.0"
+  }
+}

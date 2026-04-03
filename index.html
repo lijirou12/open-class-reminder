@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>物理课提醒 · 物理老师专用</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --accent: #c0392b;
+    --accent2: #2980b9;
+    --muted: #7f8c8d;
+    --card: #fffdf7;
+    --border: #d4c9b0;
+    --green: #27ae60;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Serif SC', serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* Texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23f5f0e8'/%3E%3Ccircle cx='1' cy='1' r='0.5' fill='%23e8e0cc' opacity='0.5'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 16px 80px;
+  }
+
+  header {
+    text-align: center;
+    padding: 32px 0 24px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 28px;
+    position: relative;
+  }
+
+  .edit-btn {
+    position: absolute;
+    top: 16px;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+
+  .edit-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--paper);
+  }
+
+  header::after {
+    content: '';
+    display: block;
+    width: 60%;
+    height: 1px;
+    background: var(--border);
+    margin: 8px auto 0;
+  }
+
+  .header-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Clock */
+  .clock-card {
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .clock-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .clock-info {
+    text-align: right;
+  }
+
+  .clock-date {
+    font-size: 13px;
+    color: #aaa;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 4px;
+  }
+
+  .clock-weekday {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+
+  /* Notification toggle */
+  .notif-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .notif-bar:hover { border-color: var(--accent); }
+
+  .notif-label {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .notif-label .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+
+  .notif-label .dot.active { background: var(--green); }
+
+  .notif-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .notif-status.on { color: var(--green); }
+
+  /* Advance time selector */
+  .advance-bar {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .advance-label {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  .advance-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .advance-btn {
+    width: 32px; height: 32px;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: background 0.15s;
+    color: var(--ink);
+  }
+
+  .advance-btn:hover { background: var(--ink); color: var(--paper); }
+
+  .advance-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    min-width: 40px;
+    text-align: center;
+    color: var(--accent);
+  }
+
+  .advance-unit {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* Section */
+  .section-title {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-left: 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Next class highlight */
+  .next-card {
+    background: var(--accent);
+    color: white;
+    border-radius: 4px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .next-card::before {
+    content: '物';
+    position: absolute;
+    right: -10px;
+    top: -20px;
+    font-size: 100px;
+    font-weight: 900;
+    opacity: 0.08;
+    line-height: 1;
+  }
+
+  .next-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    opacity: 0.8;
+    margin-bottom: 6px;
+  }
+
+  .next-class-name {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    margin-bottom: 4px;
+  }
+
+  .next-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    opacity: 0.9;
+  }
+
+  .next-countdown {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: right;
+  }
+
+  .countdown-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .countdown-label {
+    font-size: 10px;
+    opacity: 0.7;
+    letter-spacing: 1px;
+  }
+
+  /* Schedule list */
+  .schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+
+  .class-item {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color 0.2s, opacity 0.2s;
+    position: relative;
+  }
+
+  .class-item.past {
+    opacity: 0.45;
+  }
+
+  .class-item.upcoming {
+    border-color: var(--accent2);
+  }
+
+  .class-item.next {
+    border-color: var(--accent);
+    border-width: 2px;
+  }
+
+  .class-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 3px 7px;
+    border-radius: 2px;
+    white-space: nowrap;
+    min-width: 42px;
+    text-align: center;
+  }
+
+  .class-badge.class-10 { background: #8e44ad; }
+  .class-badge.class-13 { background: #16a085; }
+
+  .class-info { flex: 1; }
+
+  .class-period {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 2px;
+  }
+
+  .class-time {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .class-reminder-tag {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  .class-item.past .class-reminder-tag { color: var(--muted); }
+
+  /* Date navigation */
+  .date-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 8px 0;
+  }
+
+  .date-nav-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.15s;
+    color: var(--muted);
+  }
+
+  .date-nav-btn:hover {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .date-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .date-nav-btn:disabled:hover {
+    border-color: var(--border);
+    background: var(--card);
+    color: var(--muted);
+  }
+
+  .date-nav-info {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink);
+    font-weight: 700;
+    letter-spacing: 1px;
+    min-width: 120px;
+    text-align: center;
+  }
+
+  .date-nav-info .date-main {
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+
+  .date-nav-info .date-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+
+  /* Tabs */
+  .tab-row {
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: background 0.15s, color 0.15s;
+    color: var(--muted);
+    border-right: 1.5px solid var(--ink);
+  }
+
+  .tab-btn:last-child { border-right: none; }
+  .tab-btn.active { background: var(--ink); color: var(--paper); }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--border);
+    letter-spacing: 2px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .empty-msg {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 24px;
+    font-style: italic;
+  }
+
+  /* Edit Modal */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(26, 26, 46, 0.8);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.show {
+    display: flex;
+  }
+
+  .modal {
+    background: var(--paper);
+    border-radius: 8px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    border: 2px solid var(--ink);
+  }
+
+  .modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--ink);
+  }
+
+  .modal-close {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border);
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+
+  .modal-close:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .modal-body {
+    padding: 20px 24px;
+  }
+
+  .edit-section {
+    margin-bottom: 24px;
+  }
+
+  .edit-section-title {
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .class-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    font-size: 11px;
+  }
+
+  .schedule-table th,
+  .schedule-table td {
+    border: 1px solid var(--border);
+    padding: 6px 4px;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .schedule-table th {
+    background: var(--ink);
+    color: var(--paper);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .schedule-table .time-header {
+    background: var(--card);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-align: left;
+    padding: 6px 8px;
+    min-width: 80px;
+  }
+
+  .schedule-table .time-label {
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .schedule-table .time-range {
+    color: var(--muted);
+    font-size: 8px;
+  }
+
+  .schedule-table .day-cell {
+    width: 40px;
+    padding: 4px;
+  }
+
+  .schedule-table .class-checkbox {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    margin: 0;
+  }
+
+  .schedule-table .day-cell.has-class {
+    background: rgba(41, 128, 185, 0.1);
+  }
+
+  .day-section {
+    margin-bottom: 20px;
+  }
+
+  .edit-actions {
+    display: flex;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    border-radius: 4px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    color: var(--ink);
+  }
+
+  .btn:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .btn.primary:hover {
+    background: #a93226;
+    border-color: #a93226;
+  }
+
+  .data-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .btn-small {
+    padding: 8px 12px;
+    font-size: 11px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+
+  .btn-small:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  @media (max-width: 400px) {
+    h1 { font-size: 22px; }
+    .clock-time { font-size: 28px; }
+    
+    .modal {
+      margin: 10px;
+      max-height: 90vh;
+    }
+    
+    .modal-header, .modal-body {
+      padding: 16px 20px;
+    }
+    
+    .class-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <button class="edit-btn" onclick="openEditModal()" title="编辑课表">⚙</button>
+    <div class="header-tag">PHYSICS TEACHER TOOL</div>
+    <h1>物 <span>理</span> 课<br>提 醒 器</h1>
+    <div class="subtitle">肃宁一中 · 24-10班 &amp; 24-13班</div>
+  </header>
+
+  <!-- Clock -->
+  <div class="clock-card">
+    <div class="clock-time" id="clockTime">--:--:--</div>
+    <div class="clock-info">
+      <div class="clock-date" id="clockDate">----/--/--</div>
+      <div class="clock-weekday" id="clockWeekday">---</div>
+    </div>
+  </div>
+
+  <!-- Notification toggle -->
+  <div class="notif-bar" id="notifBar" onclick="toggleNotif()">
+    <div class="notif-label">
+      <span class="dot" id="notifDot"></span>
+      🔔 课前提醒通知
+    </div>
+    <div class="notif-status" id="notifStatus">点击开启</div>
+  </div>
+
+  <!-- Advance time -->
+  <div class="advance-bar">
+    <div class="advance-label">提前提醒</div>
+    <div class="advance-controls">
+      <button class="advance-btn" onclick="changeAdvance(-5)">−</button>
+      <span class="advance-val" id="advanceVal">10</span>
+      <span class="advance-unit">分钟</span>
+      <button class="advance-btn" onclick="changeAdvance(5)">＋</button>
+    </div>
+  </div>
+
+  <!-- Next class -->
+  <div class="section-title">下一节物理课</div>
+  <div class="next-card" id="nextCard">
+    <div class="next-tag">NEXT CLASS</div>
+    <div class="next-class-name" id="nextClassName">加载中…</div>
+    <div class="next-time" id="nextTime"></div>
+    <div class="next-countdown">
+      <div class="countdown-num" id="countdownNum">--</div>
+      <div class="countdown-label">分钟后</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="section-title" id="scheduleTitle">今日课表</div>
+  
+  <!-- Date Navigation -->
+  <div class="date-nav">
+    <button class="date-nav-btn" onclick="changeDate(-1)" id="prevBtn">‹</button>
+    <div class="date-nav-info">
+      <div class="date-main" id="dateMain">今天</div>
+      <div class="date-sub" id="dateSub">周一</div>
+    </div>
+    <button class="date-nav-btn" onclick="changeDate(1)" id="nextBtn">›</button>
+  </div>
+  
+  <div class="tab-row">
+    <button class="tab-btn active" onclick="switchTab('all')" id="taball">全部</button>
+    <button class="tab-btn" onclick="switchTab('10')" id="tab10">24-10班</button>
+    <button class="tab-btn" onclick="switchTab('13')" id="tab13">24-13班</button>
+  </div>
+
+  <div class="schedule-list" id="scheduleList"></div>
+
+  <div class="footer">SUNING NO.1 MIDDLE SCHOOL · 2025</div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">编辑课表</div>
+      <button class="modal-close" onclick="closeEditModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="edit-section">
+        <div class="edit-section-title">24-10班 物理课</div>
+        <div class="class-grid" id="edit10"></div>
+      </div>
+      
+      <div class="edit-section">
+        <div class="edit-section-title">24-13班 物理课</div>
+        <div class="class-grid" id="edit13"></div>
+      </div>
+      
+      <div class="edit-actions">
+        <button class="btn" onclick="closeEditModal()">取消</button>
+        <button class="btn primary" onclick="saveSchedule()">保存</button>
+      </div>
+      
+      <div class="data-actions">
+        <button class="btn-small" onclick="resetToDefault()">恢复默认</button>
+        <button class="btn-small" onclick="exportData()">导出数据</button>
+        <button class="btn-small" onclick="importData()">导入数据</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+// Time slots (冬季作息)
+const slots = [
+  { id: '早',   start: '07:00', end: '07:25', label: '早读' },
+  { id: '1',    start: '08:00', end: '08:45', label: '第1节' },
+  { id: '2',    start: '08:55', end: '09:40', label: '第2节' },
+  { id: '3',    start: '09:55', end: '10:40', label: '第3节' },
+  { id: '4',    start: '10:50', end: '11:35', label: '第4节' },
+  { id: '自习上',start: '11:40', end: '12:10', label: '自主学习(上)' },
+  { id: '下1',  start: '13:50', end: '14:35', label: '下午第1节' },
+  { id: '下2',  start: '14:45', end: '15:30', label: '下午第2节' },
+  { id: '下3',  start: '16:00', end: '16:45', label: '下午第3节' },
+  { id: '下4',  start: '16:50', end: '17:35', label: '下午第4节' },
+  { id: '自习下',start: '17:40', end: '18:10', label: '自主学习(下)' },
+  { id: '晚1',  start: '18:40', end: '19:20', label: '晚自习一' },
+  { id: '晚2',  start: '19:25', end: '20:05', label: '晚自习二' },
+  { id: '晚3',  start: '20:15', end: '20:55', label: '晚自习三' },
+  { id: '晚4',  start: '21:00', end: '22:00', label: '晚自习四' },
+];
+
+// ===== SCHEDULE DATA =====
+// 图片行标映射：早/1/2/3/4/自习/5/6/7/8/自习/晚1/晚2/晚3/晚4
+// 其中 5=下1, 6=下2, 7=下3, 8=下4（下午第1-4节）
+// 自习(上午)=自习上, 自习(下午)=自习下
+// 只录入物理课(物)
+
+// 24-10班 物理课
+const schedule10 = [
+  // 周一: 早语 1化 2物 3生 4数 自习生 5语 6英 7- 8班会 自习物 晚1语 晚2数 晚3数 晚4英
+  { day:1, slot:'2',     班:'10', subj:'物' },
+  { day:1, slot:'自习下', 班:'10', subj:'物' },
+  // 周二: 早英 1生 2语 3体 4物 自习物 5化 6英 7数 8数 自习- 晚1化 晚2化 晚3生 晚4物
+  { day:2, slot:'4',    班:'10', subj:'物' },
+  { day:2, slot:'自习上',班:'10', subj:'物' },
+  { day:2, slot:'晚4',  班:'10', subj:'物' },
+  // 周三: 早语 1英 2语 3数 4物 自习语 5化 6生 7- 8物 自习化 晚1英 晚2数 晚3语 晚4英
+  { day:3, slot:'4',    班:'10', subj:'物' },
+  { day:3, slot:'下4',  班:'10', subj:'物' },
+  // 周四: 早英 1化 2生 3物 4英 自习英 5体 6数 7语 8- 自习数 晚1化 晚2生 晚3物 晚4物
+  { day:4, slot:'3',    班:'10', subj:'物' },
+  { day:4, slot:'晚3',  班:'10', subj:'物' },
+  { day:4, slot:'晚4',  班:'10', subj:'物' },
+  // 周五: 早- 1语 2数 3英 4物 自习数 5生 6化 7- 8- 自习班会 晚1- 晚2英 晚3语 晚4数
+  { day:5, slot:'4',    班:'10', subj:'物' },
+  // 周六: 早班会 1物 2生 3化 4化 自习物 5语 6数 7数 8英 自习数 晚1化 晚2物 晚3生 晚4生
+  { day:6, slot:'1',    班:'10', subj:'物' },
+  { day:6, slot:'自习上',班:'10', subj:'物' },
+  { day:6, slot:'晚2',  班:'10', subj:'物' },
+  // 周日: 早英 1英 2数 3化 4语 自习化 5生 6生 7物 8物 自习- 晚1英 晚2语 晚3语 晚4数
+  { day:7, slot:'下3',  班:'10', subj:'物' },
+  { day:7, slot:'下4',  班:'10', subj:'物' },
+];
+
+// 24-13班 物理课
+const schedule13 = [
+  // 周一: 早语 1物 2化 3英 4数 自习生 5生 6语 7- 8班会 自习物 晚1数 晚2语 晚3英 晚4数
+  { day:1, slot:'1',    班:'13', subj:'物' },
+  { day:1, slot:'自习下',班:'13', subj:'物' },
+  // 周二: 早英 1语 2生 3物 4体 自习物 5化 6英 7数 8数 自习数 晚1化 晚2化 晚3物 晚4生
+  { day:2, slot:'3',    班:'13', subj:'物' },
+  { day:2, slot:'自习上',班:'13', subj:'物' },
+  { day:2, slot:'晚3',  班:'13', subj:'物' },
+  // 周三: 早语 1语 2英 3物 4数 自习语 5化 6生 7- 8物 自习化 晚1英 晚2数 晚3语 晚4英
+  { day:3, slot:'3',    班:'13', subj:'物' },
+  { day:3, slot:'下3',  班:'13', subj:'物' },
+  // 周四: 早英 1化 2生 3英 4物 自习英 5- 6体 7语 8数 自习数 晚1物 晚2物 晚3化 晚4生
+  { day:4, slot:'4',    班:'13', subj:'物' },
+  { day:4, slot:'晚1',  班:'13', subj:'物' },
+  { day:4, slot:'晚2',  班:'13', subj:'物' },
+  // 周五: 早- 1语 2数 3物 4英 自习数 5生 6化 7- 8- 自习班会 晚1- 晚2英 晚3语 晚4数
+  { day:5, slot:'3',    班:'13', subj:'物' },
+  // 周六: 早班会 1生 2物 3化 4化 自习物 5语 6数 7数 8英 自习数 晚1物 晚2化 晚3生 晚4生
+  { day:6, slot:'2',    班:'13', subj:'物' },
+  { day:6, slot:'自习上',班:'13', subj:'物' },
+  { day:6, slot:'晚1',  班:'13', subj:'物' },
+  // 周日: 早英 1数 2英 3化 4语 自习化 5物 6物 7生 8生 自习- 晚1语 晚2语 晚3英 晚4数
+  { day:7, slot:'下1',  班:'13', subj:'物' },
+  { day:7, slot:'下2',  班:'13', subj:'物' },
+];
+
+const allSchedule = [...schedule10, ...schedule13];
+
+// ===== STATE =====
+let notifEnabled = false;
+let advanceMinutes = 10;
+let currentTab = 'all';
+let scheduledTimers = [];
+let lastAlertedKey = '';
+let currentDateOffset = 0; // 0=今天, -1=昨天, 1=明天
+
+// ===== UTILS =====
+function timeToMinutes(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function getSlot(id) {
+  return slots.find(s => s.id === id);
+}
+
+function getTodayDay() {
+  // JS: 0=Sun,1=Mon...6=Sat → our: 1=Mon...7=Sun
+  const d = new Date().getDay();
+  return d === 0 ? 7 : d;
+}
+
+function getCurrentViewDay() {
+  // 获取当前查看的日期对应的星期几
+  const today = getTodayDay();
+  let viewDay = ((today - 1 + currentDateOffset) % 7) + 1;
+  if (viewDay <= 0) viewDay += 7;
+  return viewDay;
+}
+
+function getCurrentViewDate() {
+  // 获取当前查看的日期对象
+  const today = new Date();
+  const viewDate = new Date(today);
+  viewDate.setDate(today.getDate() + currentDateOffset);
+  return viewDate;
+}
+
+function getNowMinutes() {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+}
+
+function physicsForDay(班, day) {
+  const src = 班 === '10' ? schedule10 : schedule13;
+  return src.filter(c => c.day === day && c.subj === '物')
+    .map(c => ({ ...c, slotData: getSlot(c.slot) }))
+    .filter(c => c.slotData)
+    .sort((a, b) => timeToMinutes(a.slotData.start) - timeToMinutes(b.slotData.start));
+}
+
+function allPhysicsForDay(day) {
+  return allSchedule.filter(c => c.day === day && c.subj === '物')
+    .map(c => ({ ...c, slotData: getSlot(c.slot) }))
+    .filter(c => c.slotData)
+    .sort((a, b) => timeToMinutes(a.slotData.start) - timeToMinutes(b.slotData.start));
+}
+
+function physicsToday(班) {
+  return physicsForDay(班, getCurrentViewDay());
+}
+
+function allPhysicsToday() {
+  return allPhysicsForDay(getCurrentViewDay());
+}
+
+// ===== CLOCK =====
+const weekdays = ['日','一','二','三','四','五','六'];
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clockTime').textContent =
+    now.toTimeString().slice(0,8);
+  document.getElementById('clockDate').textContent =
+    `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
+  document.getElementById('clockWeekday').textContent = '周' + weekdays[now.getDay()];
+}
+
+// ===== NEXT CLASS =====
+function findNextPhysics() {
+  const nowMin = getNowMinutes();
+  const day = getTodayDay();
+  // Today's upcoming
+  const todayAll = allPhysicsToday().filter(c => timeToMinutes(c.slotData.start) > nowMin);
+  if (todayAll.length > 0) return { ...todayAll[0], daysAway: 0 };
+  // Next days (up to 7)
+  for (let i = 1; i <= 7; i++) {
+    const nextDay = ((day - 1 + i) % 7) + 1;
+    const upcoming = allSchedule.filter(c => c.day === nextDay && c.subj === '物')
+      .map(c => ({ ...c, slotData: getSlot(c.slot) }))
+      .filter(c => c.slotData)
+      .sort((a, b) => timeToMinutes(a.slotData.start) - timeToMinutes(b.slotData.start));
+    if (upcoming.length > 0) return { ...upcoming[0], daysAway: i };
+  }
+  return null;
+}
+
+function updateNextCard() {
+  const next = findNextPhysics();
+  if (!next) {
+    document.getElementById('nextClassName').textContent = '本周没有物理课';
+    document.getElementById('nextTime').textContent = '';
+    document.getElementById('countdownNum').textContent = '--';
+    return;
+  }
+  const { 班, slotData, daysAway } = next;
+  document.getElementById('nextClassName').textContent = `${班 === '10' ? '24-10班' : '24-13班'} · 物理`;
+
+  let timeStr = `${slotData.label} ${slotData.start}–${slotData.end}`;
+  if (daysAway > 0) timeStr = `${daysAway}天后 · ` + timeStr;
+  document.getElementById('nextTime').textContent = timeStr;
+
+  if (daysAway === 0) {
+    const nowMin = getNowMinutes();
+    const startMin = timeToMinutes(slotData.start);
+    const diff = startMin - nowMin;
+    document.getElementById('countdownNum').textContent = diff;
+  } else {
+    document.getElementById('countdownNum').textContent = `+${daysAway}d`;
+  }
+
+  // Check reminder
+  if (notifEnabled && daysAway === 0) {
+    const nowMin = getNowMinutes();
+    const startMin = timeToMinutes(slotData.start);
+    const diff = startMin - nowMin;
+    const key = `${班}-${slotData.id}`;
+    if (diff === advanceMinutes && lastAlertedKey !== key) {
+      lastAlertedKey = key;
+      showNotif(`⚡ 物理课即将开始`, `${班 === '10' ? '24-10班' : '24-13班'} ${slotData.label} 将在 ${advanceMinutes} 分钟后开始 (${slotData.start})`);
+    }
+  }
+}
+
+// ===== DATE NAVIGATION =====
+function changeDate(delta) {
+  currentDateOffset += delta;
+  // 限制查看范围：前7天到后7天
+  currentDateOffset = Math.max(-7, Math.min(7, currentDateOffset));
+  updateDateNavigation();
+  renderSchedule();
+}
+
+function updateDateNavigation() {
+  const viewDate = getCurrentViewDate();
+  const today = new Date();
+  
+  // 更新日期显示
+  let dateText;
+  if (currentDateOffset === 0) {
+    dateText = '今天';
+  } else if (currentDateOffset === -1) {
+    dateText = '昨天';
+  } else if (currentDateOffset === 1) {
+    dateText = '明天';
+  } else if (currentDateOffset > 0) {
+    dateText = `${currentDateOffset}天后`;
+  } else {
+    dateText = `${Math.abs(currentDateOffset)}天前`;
+  }
+  
+  document.getElementById('dateMain').textContent = dateText;
+  document.getElementById('dateSub').textContent = '周' + weekdays[viewDate.getDay()];
+  
+  // 更新标题
+  const titleText = currentDateOffset === 0 ? '今日课表' : '课表';
+  document.getElementById('scheduleTitle').textContent = titleText;
+  
+  // 更新按钮状态
+  document.getElementById('prevBtn').disabled = currentDateOffset <= -7;
+  document.getElementById('nextBtn').disabled = currentDateOffset >= 7;
+}
+
+// ===== SCHEDULE LIST =====
+function renderSchedule() {
+  const list = document.getElementById('scheduleList');
+  const nowMin = getNowMinutes();
+  const isToday = currentDateOffset === 0;
+
+  let classes;
+  if (currentTab === 'all') {
+    classes = allPhysicsToday();
+  } else {
+    classes = physicsToday(currentTab);
+  }
+
+  if (classes.length === 0) {
+    const emptyText = currentDateOffset === 0 ? '今天没有物理课 🎉' : '这天没有物理课 📚';
+    list.innerHTML = `<div class="empty-msg">${emptyText}</div>`;
+    return;
+  }
+
+  // Find next (only for today)
+  const nextIdx = isToday ? classes.findIndex(c => timeToMinutes(c.slotData.start) > nowMin) : -1;
+
+  list.innerHTML = classes.map((c, i) => {
+    const startMin = timeToMinutes(c.slotData.start);
+    const endMin = timeToMinutes(c.slotData.end);
+    
+    let cls = 'class-item';
+    let statusText = c.slotData.start;
+    
+    if (isToday) {
+      const isPast = endMin < nowMin;
+      const isNow = startMin <= nowMin && nowMin <= endMin;
+      const isNext = i === nextIdx;
+
+      if (isPast) cls += ' past';
+      else if (isNext) cls += ' next';
+      else if (!isPast) cls += ' upcoming';
+
+      if (isNow) statusText = '🔴 上课中';
+      else if (isPast) statusText = '✓ 已结束';
+      else if (isNext) {
+        const diff = timeToMinutes(c.slotData.start) - nowMin;
+        statusText = `${diff}分钟后`;
+      }
+    } else {
+      // 非今天的日期，显示为普通状态
+      cls += ' upcoming';
+    }
+
+    return `
+      <div class="${cls}">
+        <div class="class-badge class-${c.班}">${c.班 === '10' ? '10班' : '13班'}</div>
+        <div class="class-info">
+          <div class="class-period">${c.slotData.label}</div>
+          <div class="class-time">${c.slotData.start} – ${c.slotData.end}</div>
+        </div>
+        <div class="class-reminder-tag">${statusText}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ===== TABS =====
+function switchTab(t) {
+  currentTab = t;
+  ['10','13','all'].forEach(id => {
+    const btn = document.getElementById('tab' + id);
+    btn.classList.toggle('active', id === t);
+  });
+  renderSchedule();
+}
+
+// ===== NOTIFICATION =====
+let notifGranted = false;
+
+async function toggleNotif() {
+  if (!notifEnabled) {
+    if ('Notification' in window) {
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        notifGranted = true;
+        notifEnabled = true;
+        updateNotifUI(true);
+        showNotif('🔔 提醒已开启', `将在每节物理课前 ${advanceMinutes} 分钟提醒您`);
+      } else {
+        alert('请在浏览器允许通知权限，才能接收提醒。\n\n提示：也可以将此页面添加到手机桌面使用。');
+      }
+    } else {
+      // Fallback for no notification support
+      notifEnabled = true;
+      updateNotifUI(true);
+      alert('您的浏览器不支持系统通知，将使用页面弹窗提醒。');
+    }
+  } else {
+    notifEnabled = false;
+    updateNotifUI(false);
+  }
+}
+
+function updateNotifUI(on) {
+  document.getElementById('notifDot').classList.toggle('active', on);
+  const s = document.getElementById('notifStatus');
+  s.textContent = on ? '已开启' : '点击开启';
+  s.className = 'notif-status' + (on ? ' on' : '');
+}
+
+function showNotif(title, body) {
+  if (notifGranted && Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '' });
+  } else {
+    // In-page alert as fallback
+    setTimeout(() => alert(`${title}\n${body}`), 100);
+  }
+}
+
+// ===== ADVANCE =====
+function changeAdvance(delta) {
+  advanceMinutes = Math.max(5, Math.min(30, advanceMinutes + delta));
+  document.getElementById('advanceVal').textContent = advanceMinutes;
+}
+
+// ===== EDIT MODAL =====
+let editData = { '10': {}, '13': {} };
+
+function openEditModal() {
+  // 初始化编辑数据
+  initEditData();
+  renderEditModal();
+  document.getElementById('editModal').classList.add('show');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('show');
+}
+
+function initEditData() {
+  // 从当前课表数据初始化编辑状态
+  editData = { '10': {}, '13': {} };
+  
+  // 加载10班数据
+  schedule10.forEach(item => {
+    const key = `${item.day}-${item.slot}`;
+    editData['10'][key] = true;
+  });
+  
+  // 加载13班数据
+  schedule13.forEach(item => {
+    const key = `${item.day}-${item.slot}`;
+    editData['13'][key] = true;
+  });
+}
+
+function renderEditModal() {
+  const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  
+  // 渲染10班编辑界面 - 表格形式
+  const edit10 = document.getElementById('edit10');
+  let table10Html = `
+    <table class="schedule-table">
+      <thead>
+        <tr>
+          <th class="time-header">时间段</th>
+          ${dayNames.map(day => `<th>${day}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  
+  slots.forEach(slot => {
+    table10Html += `
+      <tr>
+        <td class="time-header">
+          <div class="time-label">${slot.label}</div>
+          <div class="time-range">${slot.start}-${slot.end}</div>
+        </td>
+    `;
+    
+    for (let day = 1; day <= 7; day++) {
+      const key = `${day}-${slot.id}`;
+      const checked = editData['10'][key] || false;
+      
+      table10Html += `
+        <td class="day-cell ${checked ? 'has-class' : ''}">
+          <input type="checkbox" class="class-checkbox" 
+                 ${checked ? 'checked' : ''} 
+                 onchange="toggleClassTable('10', ${day}, '${slot.id}', this.checked)">
+        </td>
+      `;
+    }
+    
+    table10Html += '</tr>';
+  });
+  
+  table10Html += '</tbody></table>';
+  edit10.innerHTML = table10Html;
+  
+  // 渲染13班编辑界面 - 表格形式
+  const edit13 = document.getElementById('edit13');
+  let table13Html = `
+    <table class="schedule-table">
+      <thead>
+        <tr>
+          <th class="time-header">时间段</th>
+          ${dayNames.map(day => `<th>${day}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  
+  slots.forEach(slot => {
+    table13Html += `
+      <tr>
+        <td class="time-header">
+          <div class="time-label">${slot.label}</div>
+          <div class="time-range">${slot.start}-${slot.end}</div>
+        </td>
+    `;
+    
+    for (let day = 1; day <= 7; day++) {
+      const key = `${day}-${slot.id}`;
+      const checked = editData['13'][key] || false;
+      
+      table13Html += `
+        <td class="day-cell ${checked ? 'has-class' : ''}">
+          <input type="checkbox" class="class-checkbox" 
+                 ${checked ? 'checked' : ''} 
+                 onchange="toggleClassTable('13', ${day}, '${slot.id}', this.checked)">
+        </td>
+      `;
+    }
+    
+    table13Html += '</tr>';
+  });
+  
+  table13Html += '</tbody></table>';
+  edit13.innerHTML = table13Html;
+}
+
+function toggleClass(班, day, slotId, checked) {
+  const key = `${day}-${slotId}`;
+  if (checked) {
+    editData[班][key] = true;
+  } else {
+    delete editData[班][key];
+  }
+  
+  // 更新UI
+  const container = document.getElementById(`edit${班}`);
+  const item = container.querySelector(`input[onchange*="'${slotId}'"]`).closest('.class-edit-item');
+  item.classList.toggle('has-class', checked);
+}
+
+function toggleClassTable(班, day, slotId, checked) {
+  const key = `${day}-${slotId}`;
+  if (checked) {
+    editData[班][key] = true;
+  } else {
+    delete editData[班][key];
+  }
+  
+  // 更新UI - 表格形式
+  const container = document.getElementById(`edit${班}`);
+  const checkbox = container.querySelector(`input[onchange*="toggleClassTable('${班}', ${day}, '${slotId}'"]`);
+  if (checkbox) {
+    const cell = checkbox.closest('.day-cell');
+    cell.classList.toggle('has-class', checked);
+  }
+}
+
+function saveSchedule() {
+  // 将编辑数据转换为课表格式
+  const newSchedule10 = [];
+  const newSchedule13 = [];
+  
+  Object.keys(editData['10']).forEach(key => {
+    const [day, slot] = key.split('-');
+    newSchedule10.push({
+      day: parseInt(day),
+      slot: slot,
+      班: '10',
+      subj: '物'
+    });
+  });
+  
+  Object.keys(editData['13']).forEach(key => {
+    const [day, slot] = key.split('-');
+    newSchedule13.push({
+      day: parseInt(day),
+      slot: slot,
+      班: '13',
+      subj: '物'
+    });
+  });
+  
+  // 更新全局数据
+  schedule10.length = 0;
+  schedule10.push(...newSchedule10);
+  
+  schedule13.length = 0;
+  schedule13.push(...newSchedule13);
+  
+  // 更新allSchedule
+  allSchedule.length = 0;
+  allSchedule.push(...schedule10, ...schedule13);
+  
+  // 保存到localStorage
+  saveToStorage();
+  
+  // 刷新界面
+  renderSchedule();
+  updateNextCard();
+  
+  // 关闭模态框
+  closeEditModal();
+  
+  alert('课表已保存！');
+}
+
+// ===== 数据持久化 =====
+function saveToStorage() {
+  const data = {
+    schedule10: schedule10,
+    schedule13: schedule13,
+    notifEnabled: notifEnabled,
+    advanceMinutes: advanceMinutes
+  };
+  localStorage.setItem('physicsSchedule', JSON.stringify(data));
+}
+
+function loadFromStorage() {
+  try {
+    const saved = localStorage.getItem('physicsSchedule');
+    if (saved) {
+      const data = JSON.parse(saved);
+      
+      // 恢复课表数据
+      if (data.schedule10) {
+        schedule10.length = 0;
+        schedule10.push(...data.schedule10);
+      }
+      if (data.schedule13) {
+        schedule13.length = 0;
+        schedule13.push(...data.schedule13);
+      }
+      
+      // 更新allSchedule
+      allSchedule.length = 0;
+      allSchedule.push(...schedule10, ...schedule13);
+      
+      // 恢复设置
+      if (typeof data.notifEnabled === 'boolean') {
+        notifEnabled = data.notifEnabled;
+        updateNotifUI(notifEnabled);
+      }
+      if (typeof data.advanceMinutes === 'number') {
+        advanceMinutes = data.advanceMinutes;
+        document.getElementById('advanceVal').textContent = advanceMinutes;
+      }
+    }
+  } catch (e) {
+    console.error('加载数据失败:', e);
+  }
+}
+
+function resetToDefault() {
+  if (confirm('确定要恢复到默认课表吗？这将清除所有自定义修改。')) {
+    // 清除localStorage
+    localStorage.removeItem('physicsSchedule');
+    
+    // 重新加载页面以恢复默认数据
+    location.reload();
+  }
+}
+
+function exportData() {
+  const data = {
+    schedule10: schedule10,
+    schedule13: schedule13,
+    exportTime: new Date().toISOString(),
+    version: '1.0'
+  };
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `物理课表_${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  
+  input.onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        
+        if (data.schedule10 && data.schedule13) {
+          if (confirm('确定要导入这个课表文件吗？这将覆盖当前的课表设置。')) {
+            // 更新数据
+            schedule10.length = 0;
+            schedule10.push(...data.schedule10);
+            
+            schedule13.length = 0;
+            schedule13.push(...data.schedule13);
+            
+            allSchedule.length = 0;
+            allSchedule.push(...schedule10, ...schedule13);
+            
+            // 保存并刷新
+            saveToStorage();
+            renderSchedule();
+            updateNextCard();
+            closeEditModal();
+            
+            alert('课表导入成功！');
+          }
+        } else {
+          alert('文件格式不正确，请选择有效的课表文件。');
+        }
+      } catch (err) {
+        alert('文件解析失败，请检查文件格式。');
+      }
+    };
+    reader.readAsText(file);
+  };
+  
+  input.click();
+}
+
+// 重写changeAdvance函数以支持数据持久化
+function changeAdvance(delta) {
+  advanceMinutes = Math.max(5, Math.min(30, advanceMinutes + delta));
+  document.getElementById('advanceVal').textContent = advanceMinutes;
+  saveToStorage(); // 保存设置
+}
+
+// 重写toggleNotif函数以支持数据持久化
+async function toggleNotif() {
+  if (!notifEnabled) {
+    if ('Notification' in window) {
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        notifGranted = true;
+        notifEnabled = true;
+        updateNotifUI(true);
+        saveToStorage(); // 保存设置
+        showNotif('🔔 提醒已开启', `将在每节物理课前 ${advanceMinutes} 分钟提醒您`);
+      } else {
+        alert('请在浏览器允许通知权限，才能接收提醒。\n\n提示：也可以将此页面添加到手机桌面使用。');
+      }
+    } else {
+      // Fallback for no notification support
+      notifEnabled = true;
+      updateNotifUI(true);
+      saveToStorage(); // 保存设置
+      alert('您的浏览器不支持系统通知，将使用页面弹窗提醒。');
+    }
+  } else {
+    notifEnabled = false;
+    updateNotifUI(false);
+    saveToStorage(); // 保存设置
+  }
+}
+
+// ===== MAIN LOOP =====
+function tick() {
+  updateClock();
+  updateNextCard();
+}
+
+setInterval(tick, 1000);         // 时钟每秒更新
+setInterval(renderSchedule, 60000); // 课表每分钟更新
+
+// 初始化
+loadFromStorage(); // 先加载保存的数据
+tick();
+updateDateNavigation();
+renderSchedule();
+
+// 点击模态框外部关闭
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeEditModal();
+  }
+});
+</script>
+</body>
+</html>

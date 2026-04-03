@@ -1,0 +1,115 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Install Cordova
+      run: |
+        npm install -g cordova
+        
+    - name: Create Cordova project
+      run: |
+        cordova create physics-schedule com.example.physicsschedule "物理课提醒"
+        cd physics-schedule
+        cordova platform add android
+        
+    - name: Copy web files
+      run: |
+        rm physics-schedule/www/index.html
+        cp index.html physics-schedule/www/
+        
+    - name: Configure Cordova
+      run: |
+        cd physics-schedule
+        # 添加必要的插件
+        cordova plugin add cordova-plugin-device
+        cordova plugin add cordova-plugin-statusbar
+        cordova plugin add cordova-plugin-splashscreen
+        cordova plugin add cordova-plugin-vibration
+        
+    - name: Update config.xml
+      run: |
+        cd physics-schedule
+        cat > config.xml << 'EOF'
+        <?xml version='1.0' encoding='utf-8'?>
+        <widget id="com.example.physicsschedule" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+            <name>物理课提醒</name>
+            <description>物理老师专用课表提醒应用</description>
+            <author email="dev@example.com" href="https://example.com">开发团队</author>
+            <content src="index.html" />
+            <allow-intent href="http://*/*" />
+            <allow-intent href="https://*/*" />
+            <platform name="android">
+                <allow-intent href="market:*" />
+                <preference name="Orientation" value="portrait" />
+                <preference name="Fullscreen" value="false" />
+                <preference name="StatusBarOverlaysWebView" value="false" />
+                <preference name="StatusBarBackgroundColor" value="#1a1a2e" />
+                <preference name="StatusBarStyle" value="lightcontent" />
+            </platform>
+            <preference name="DisallowOverscroll" value="true" />
+            <preference name="android-minSdkVersion" value="22" />
+            <preference name="android-targetSdkVersion" value="33" />
+        </widget>
+        EOF
+        
+    - name: Build APK
+      run: |
+        cd physics-schedule
+        cordova build android --release
+        
+    - name: Sign APK (optional)
+      run: |
+        cd physics-schedule
+        # 创建临时密钥库用于签名
+        keytool -genkey -v -keystore release-key.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Physics Schedule, OU=Dev, O=Example, L=City, S=State, C=CN"
+        
+        # 签名APK
+        jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore release-key.keystore -storepass android -keypass android platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk release
+        
+        # 对齐APK
+        $ANDROID_HOME/build-tools/*/zipalign -v 4 platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk physics-schedule-signed.apk
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: physics-schedule-apk
+        path: |
+          physics-schedule/platforms/android/app/build/outputs/apk/release/*.apk
+          physics-schedule/physics-schedule-signed.apk
+        retention-days: 30
+        
+    - name: Create Release (on tag)
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          physics-schedule/physics-schedule-signed.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

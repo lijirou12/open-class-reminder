@@ -63,6 +63,8 @@ jobs:
     - name: Fix Gradle version compatibility
       run: |
         cd physics-schedule
+        # 确保 Gradle wrapper 目录存在
+        mkdir -p platforms/android/gradle/wrapper
         # 强制使用兼容的 Gradle 版本
         echo "distributionUrl=https\://services.gradle.org/distributions/gradle-7.6.4-bin.zip" > platforms/android/gradle/wrapper/gradle-wrapper.properties
         

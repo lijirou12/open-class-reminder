@@ -31,6 +31,11 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       
+    - name: Install Android SDK Platform 34
+      run: |
+        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34"
+        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0"
+      
     - name: Install Cordova
       run: |
         npm install -g cordova
@@ -77,7 +82,8 @@ jobs:
             </platform>
             <preference name="DisallowOverscroll" value="true" />
             <preference name="android-minSdkVersion" value="22" />
-            <preference name="android-targetSdkVersion" value="33" />
+            <preference name="android-targetSdkVersion" value="34" />
+            <preference name="android-compileSdkVersion" value="34" />
         </widget>
         EOF
         

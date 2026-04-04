@@ -75,6 +75,14 @@ jobs:
         mkdir -p platforms/android/gradle/wrapper
         # 强制使用兼容的 Gradle 版本
         echo "distributionUrl=https\://services.gradle.org/distributions/gradle-7.6.4-bin.zip" > platforms/android/gradle/wrapper/gradle-wrapper.properties
+        # 强制使用系统级 Gradle 而不是 wrapper
+        export CORDOVA_ANDROID_GRADLE_DISTRIBUTION_URL=https://services.gradle.org/distributions/gradle-7.6.4-bin.zip
+        # 替换 gradlew 脚本使其使用系统 gradle
+        if [ -f platforms/android/gradlew ]; then
+          echo '#!/bin/bash' > platforms/android/gradlew
+          echo 'gradle "$@"' >> platforms/android/gradlew
+          chmod +x platforms/android/gradlew
+        fi
         
     - name: Update config.xml
       run: |

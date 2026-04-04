@@ -31,20 +31,20 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: Install Android SDK Platform 33
+    - name: Install Android SDK Platform 30
       run: |
-        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-33"
-        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2"
+        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-30"
+        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;30.0.3"
       
     - name: Install Cordova
       run: |
-        npm install -g cordova@12
+        npm install -g cordova@11
         
     - name: Create Cordova project
       run: |
         cordova create physics-schedule com.example.physicsschedule "物理课提醒"
         cd physics-schedule
-        cordova platform add android@12.0.1
+        cordova platform add android@10.1.2
         
     - name: Copy web files
       run: |
@@ -88,8 +88,8 @@ jobs:
             </platform>
             <preference name="DisallowOverscroll" value="true" />
             <preference name="android-minSdkVersion" value="22" />
-            <preference name="android-targetSdkVersion" value="33" />
-            <preference name="android-compileSdkVersion" value="33" />
+            <preference name="android-targetSdkVersion" value="30" />
+            <preference name="android-compileSdkVersion" value="30" />
         </widget>
         EOF
         

@@ -26,7 +26,7 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '11'
         
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
@@ -59,6 +59,12 @@ jobs:
         cordova plugin add cordova-plugin-statusbar
         cordova plugin add cordova-plugin-splashscreen
         cordova plugin add cordova-plugin-vibration
+        
+    - name: Fix Gradle version compatibility
+      run: |
+        cd physics-schedule
+        # 强制使用兼容的 Gradle 版本
+        echo "distributionUrl=https\://services.gradle.org/distributions/gradle-7.6.4-bin.zip" > platforms/android/gradle/wrapper/gradle-wrapper.properties
         
     - name: Update config.xml
       run: |

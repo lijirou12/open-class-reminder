@@ -26,46 +26,41 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '11'
+        java-version: '17'
         
-    - name: Setup Android SDK manually
+    - name: Setup Android SDK
       run: |
         # 设置 Android SDK 路径
         export ANDROID_HOME=/usr/local/lib/android/sdk
         export ANDROID_SDK_ROOT=$ANDROID_HOME
         echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
         echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-        echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
         echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
         
         # 创建目录
-        sudo mkdir -p $ANDROID_HOME/cmdline-tools
+        ls -la $ANDROID_HOME/
         
         # 下载古老但兼容 Java 11 的 SDK 工具 (26.1.1)
-        wget -q https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip
-        sudo unzip -q sdk-tools-linux-4333796.zip -d $ANDROID_HOME/
+        SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+        if [ ! -x "$SDKMANAGER" ]; then
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -path '*/bin/sdkmanager' | sort | tail -n 1)"
+        fi
         
         # 检查并正确移动目录结构
         ls -la $ANDROID_HOME/
-        if [ -d "$ANDROID_HOME/tools" ]; then
-          echo "Found tools directory, moving to cmdline-tools/latest"
-          sudo mkdir -p $ANDROID_HOME/cmdline-tools
-          sudo mv $ANDROID_HOME/tools $ANDROID_HOME/cmdline-tools/latest
-        else
-          echo "Checking final directory structure:"
-          ls -la $ANDROID_HOME/cmdline-tools/ || echo "cmdline-tools directory does not exist"
+        if [ -z "$SDKMANAGER" ] || [ ! -x "$SDKMANAGER" ]; then
+          echo "sdkmanager not found under $ANDROID_HOME/cmdline-tools"
+          exit 1
         fi
         
         # 设置权限
-        sudo chmod -R 755 $ANDROID_HOME
+        echo "$(dirname "$SDKMANAGER")" >> $GITHUB_PATH
         
         # 接受许可证
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+        yes | "$SDKMANAGER" --licenses
         
         # 安装必要的 SDK 组件
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-30"
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;30.0.3"
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools"
+        "$SDKMANAGER" "platforms;android-30" "build-tools;30.0.3" "platform-tools"
       
     - name: Install specific Gradle version
       run: |

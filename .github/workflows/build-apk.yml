@@ -43,8 +43,18 @@ jobs:
         
         # 下载兼容 Java 11 的更老版本 SDK 工具 (6.0)
         wget -q https://dl.google.com/android/repository/commandlinetools-linux-6514223_latest.zip
-        sudo unzip -q commandlinetools-linux-6514223_latest.zip -d $ANDROID_HOME/cmdline-tools/
-        sudo mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+        sudo unzip -q commandlinetools-linux-6514223_latest.zip -d $ANDROID_HOME/
+        
+        # 检查并正确移动目录结构
+        ls -la $ANDROID_HOME/
+        if [ -d "$ANDROID_HOME/cmdline-tools" ]; then
+          sudo mv $ANDROID_HOME/cmdline-tools $ANDROID_HOME/cmdline-tools-temp
+          sudo mkdir -p $ANDROID_HOME/cmdline-tools
+          sudo mv $ANDROID_HOME/cmdline-tools-temp $ANDROID_HOME/cmdline-tools/latest
+        else
+          echo "cmdline-tools directory not found, checking for tools directory"
+          ls -la $ANDROID_HOME/
+        fi
         
         # 设置权限
         sudo chmod -R 755 $ANDROID_HOME

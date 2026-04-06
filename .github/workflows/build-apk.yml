@@ -41,9 +41,9 @@ jobs:
         # 创建目录
         sudo mkdir -p $ANDROID_HOME/cmdline-tools
         
-        # 下载兼容 Java 11 的较老版本 SDK 工具 (7.0)
-        wget -q https://dl.google.com/android/repository/commandlinetools-linux-7583922_latest.zip
-        sudo unzip -q commandlinetools-linux-7583922_latest.zip -d $ANDROID_HOME/cmdline-tools/
+        # 下载兼容 Java 11 的更老版本 SDK 工具 (6.0)
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-6514223_latest.zip
+        sudo unzip -q commandlinetools-linux-6514223_latest.zip -d $ANDROID_HOME/cmdline-tools/
         sudo mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
         
         # 设置权限

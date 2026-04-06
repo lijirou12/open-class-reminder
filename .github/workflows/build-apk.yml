@@ -47,13 +47,17 @@ jobs:
         
         # 检查并正确移动目录结构
         ls -la $ANDROID_HOME/
-        if [ -d "$ANDROID_HOME/cmdline-tools" ]; then
+        if [ -d "$ANDROID_HOME/tools" ]; then
+          echo "Found tools directory, moving to cmdline-tools/latest"
+          sudo mv $ANDROID_HOME/tools $ANDROID_HOME/cmdline-tools/latest
+        elif [ -d "$ANDROID_HOME/cmdline-tools" ] && [ ! -d "$ANDROID_HOME/cmdline-tools/latest" ]; then
+          echo "Found cmdline-tools directory, reorganizing structure"
           sudo mv $ANDROID_HOME/cmdline-tools $ANDROID_HOME/cmdline-tools-temp
           sudo mkdir -p $ANDROID_HOME/cmdline-tools
           sudo mv $ANDROID_HOME/cmdline-tools-temp $ANDROID_HOME/cmdline-tools/latest
         else
-          echo "cmdline-tools directory not found, checking for tools directory"
-          ls -la $ANDROID_HOME/
+          echo "Checking final directory structure:"
+          ls -la $ANDROID_HOME/cmdline-tools/ || echo "cmdline-tools directory does not exist"
         fi
         
         # 设置权限

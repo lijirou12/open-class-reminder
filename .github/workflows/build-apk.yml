@@ -146,7 +146,7 @@ jobs:
     - name: Build APK
       run: |
         cd physics-schedule
-        cordova build android --release
+        cordova build android --release -- --packageType=apk
         
     - name: Sign APK (optional)
       run: |
@@ -155,10 +155,23 @@ jobs:
         keytool -genkey -v -keystore release-key.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Physics Schedule, OU=Dev, O=Example, L=City, S=State, C=CN"
         
         # 签名APK
-        jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore release-key.keystore -storepass android -keypass android platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk release
+        APK_PATH="$(find platforms/android/app/build/outputs/apk/release -name '*-unsigned.apk' | sort | head -n 1)"
+        if [ -z "$APK_PATH" ]; then
+          echo "Release APK not found"
+          find platforms/android/app/build/outputs -type f | sort || true
+          exit 1
+        fi
         
         # 对齐APK
-        $ANDROID_HOME/build-tools/*/zipalign -v 4 platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk physics-schedule-signed.apk
+        ZIPALIGN="$(find "$ANDROID_HOME/build-tools" -path '*/zipalign' | sort | tail -n 1)"
+        APKSIGNER="$(find "$ANDROID_HOME/build-tools" -path '*/apksigner' | sort | tail -n 1)"
+        if [ -z "$ZIPALIGN" ] || [ -z "$APKSIGNER" ]; then
+          echo "zipalign or apksigner not found"
+          exit 1
+        fi
+
+        "$ZIPALIGN" -v 4 "$APK_PATH" physics-schedule-aligned.apk
+        "$APKSIGNER" sign --ks release-key.keystore --ks-key-alias release --ks-pass pass:android --key-pass pass:android --out physics-schedule-signed.apk physics-schedule-aligned.apk
         
     - name: Upload APK
       uses: actions/upload-artifact@v4

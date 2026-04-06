@@ -22,7 +22,7 @@ jobs:
       with:
         node-version: '20'
         
-    - name: Setup Java
+    - name: Setup Java 17 for Android SDK tools
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
@@ -62,6 +62,12 @@ jobs:
         # 安装必要的 SDK 组件
         "$SDKMANAGER" "platforms;android-30" "build-tools;30.0.3" "platform-tools"
       
+    - name: Switch to Java 11 for Cordova Android build
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '11'
+
     - name: Install specific Gradle version
       run: |
         # 下载并安装 Gradle 7.6.4
